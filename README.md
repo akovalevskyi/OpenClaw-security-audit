@@ -49,6 +49,31 @@ python3 openclaw_audit.py --web
 
 If any checks fail, the dashboard will provide you with the exact prompt to copy and paste into Gemini CLI (or any other AI assistant) to automatically fix the vulnerability on your server.
 
+## Gemini CLI Skill
+
+For users of **Gemini CLI**, we've included a specialized skill that allows you to run audits directly from your AI assistant.
+
+### Installation
+
+1. Clone this repository locally.
+2. Package the skill:
+   ```bash
+   # From the repository root
+   node <path-to-skill-creator>/scripts/package_skill.cjs ./skill
+   ```
+3. Install the skill:
+   ```bash
+   gemini skills install openclaw-security-audit.skill --scope user
+   ```
+4. Reload skills: `/skills reload`
+
+### Usage
+
+Simply ask your Gemini CLI:
+*"Run a security audit for my OpenClaw installation"*
+
+*Note: The skill requires an `openclaw_config.json` file in your home directory containing your VPS host and container details.*
+
 ## License
 
 MIT License
