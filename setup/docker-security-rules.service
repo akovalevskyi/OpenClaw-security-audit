@@ -1,0 +1,13 @@
+[Unit]
+Description=Apply custom DOCKER-USER iptables rules
+After=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/apply-docker-rules.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+ok

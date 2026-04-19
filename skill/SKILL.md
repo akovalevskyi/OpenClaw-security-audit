@@ -1,27 +1,17 @@
----
-name: openclaw-security-audit
-description: Performs a comprehensive security audit of the OpenClaw installation on the VPS, including container isolation, Nginx headers, SSL, and firewall rules.
----
+# OpenClaw Advanced Security Audit Skill
 
-# OpenClaw Security Audit
+Expert instructions for verifying the security posture of the OpenClaw gateway and host infrastructure.
 
-Use this skill to verify the security posture of the OpenClaw gateway and its infrastructure.
+## Commands
+- **Run Audit**: \`python3 scripts/audit_openclaw.py\` - executes a deep check across 28 security vectors.
 
-## Workflow
+## Verified Vectors:
+1. **Infrastructure**: SSH (2244, AllowUsers), Fail2ban, UFW, Unattended-Upgrades status.
+2. **Containerization**: Isolation (no-privileged), Resource Limits (Pids, CPU, RAM), Sandbox (bwrap).
+3. **Networking**: DOCKER-USER iptables chain (DROP/LOG rules).
+4. **Data Protection**: GPG-encrypted backups, Offsite replication (rclone).
+5. **App Configuration**: trustedProxies, secret injection, rate limiting.
 
-1. **Run the Audit Script**: Execute the bundled Python script to perform automated checks on the VPS.
-   ```bash
-   python3 scripts/audit_openclaw.py
-   ```
-
-2. **Analyze Results**:
-   - **Internal Audit**: Review the output from `openclaw security audit`. Pay attention to CRITICAL or WARN items.
-   - **Nginx Headers**: Ensure HSTS, X-Frame-Options, and other security headers are present for `oc.andriko.xyz`.
-   - **Firewall**: Verify that the `DOCKER-USER` chain effectively isolates the container from external traffic on `eth0`.
-   - **Permissions**: Confirm that `.openclaw` (700) and `openclaw.json` (600) have strict permissions.
-
-3. **Remediation**: If any checks fail, propose fixes based on the [OpenClaw Security Documentation](https://docs.openclaw.ai/gateway/security).
-
-## Resources
-
-- `scripts/audit_openclaw.py`: Automates SSH connection and security verification steps.
+## Reference Files
+- \`/root/openclaw_security_checklist.md\` - Master security checklist on the VPS.
+- \`/root/backup_openclaw.sh\` - Hardened backup automation script.

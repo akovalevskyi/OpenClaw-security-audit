@@ -1,79 +1,23 @@
-# OpenClaw Security Audit
+# OpenClaw Advanced Security Audit
 
-A standalone, 1-click Python utility to perform a deep security audit of your [OpenClaw](https://openclaw.ai) installation on a VPS. It includes both a **CLI mode** and a beautifully animated **Web Dashboard**.
+A comprehensive security auditing and hardening framework for OpenClaw infrastructure.
 
 ## Features
+- **Host Hardening:** Port verification, SSH restriction (AllowUsers root), and legacy user locking.
+- **Docker Isolation:** PidsLimit enforcement, privileged mode removal, and bubblewrap (bwrap) integration.
+- **Network Security:** DOCKER-USER chain isolation with logging to prevent UFW bypass.
+- **Secure Backups:** GPG symmetric encryption (AES256) and automated offsite sync via rclone (Backblaze B2).
+- **Web Audit Dashboard:** Real-time interactive security monitoring service (Flask).
 
-This tool automatically verifies your VPS and OpenClaw configuration against the official [OpenClaw Security Guidelines](https://docs.openclaw.ai/gateway/security):
+## Components
+- \`skill/\`: Gemini CLI Skill for autonomous security checks.
+- \`server/\`: Flask-based Audit API and Web UI.
+- \`setup/\`: Infrastructure hardening scripts and systemd services.
 
-- **Infrastructure Hardening**: SSH port configuration, password authentication limits, UFW firewall status, and Fail2ban.
-- **Docker Security**: Checks for bubblewrap (bwrap) isolation, docker.sock unmounting, and DOCKER-USER iptables rules.
-- **Secret Management**: Verifies the absence of hardcoded tokens and checks for vault scripts.
-- **Application Security**: Rate limiting, mDNS status, tools.deny (bash/exec), and log redaction.
-- **Web Security**: Checks for Nginx security headers (HSTS, XSS-Protection, X-Frame-Options).
-- **Workspace Integrity**: Checks strict permissions for `.openclaw` directory (700) and `openclaw.json` (600).
+## Prerequisites
+1. \`rclone\` configured with a remote named \`b2-backup\`.
+2. \`gpg\` installed with a passphrase stored in \`/root/.backup_passphrase\`.
+3. \`docker-security-rules.service\` installed for firewall persistence.
 
-## Requirements
-
-- A Linux VPS running OpenClaw.
-- Python 3.
-- To use the Web Dashboard, you must have `flask` installed (`pip install flask`).
-
-## Usage
-
-Download the script to your VPS:
-
-```bash
-curl -O https://raw.githubusercontent.com/akovalevskyi/OpenClaw-security-audit/main/openclaw_audit.py
-chmod +x openclaw_audit.py
-```
-
-### 1. CLI Mode (Terminal)
-
-Run the script directly in your terminal for a fast, colorful text report:
-
-```bash
-python3 openclaw_audit.py
-```
-
-### 2. Web Dashboard Mode (Visual)
-
-Spin up an interactive, animated web dashboard that streams the audit progress via Server-Sent Events (SSE):
-
-```bash
-python3 openclaw_audit.py --web
-```
-
-*By default, the dashboard will run on port `8021` (`http://<your-vps-ip>:8021`).*
-*To specify a custom port, use: `python3 openclaw_audit.py --web --port 1234`*
-
-If any checks fail, the dashboard will provide you with the exact prompt to copy and paste into Gemini CLI (or any other AI assistant) to automatically fix the vulnerability on your server.
-
-## Gemini CLI Skill
-
-For users of **Gemini CLI**, we've included a specialized skill that allows you to run audits directly from your AI assistant.
-
-### Installation
-
-1. Clone this repository locally.
-2. Package the skill:
-   ```bash
-   # From the repository root
-   node <path-to-skill-creator>/scripts/package_skill.cjs ./skill
-   ```
-3. Install the skill:
-   ```bash
-   gemini skills install openclaw-security-audit.skill --scope user
-   ```
-4. Reload skills: `/skills reload`
-
-### Usage
-
-Simply ask your Gemini CLI:
-*"Run a security audit for my OpenClaw installation"*
-
-*Note: The skill requires an `openclaw_config.json` file in your home directory containing your VPS host and container details.*
-
-## License
-
-MIT License
+---
+*Last Updated: April 19, 2026*
