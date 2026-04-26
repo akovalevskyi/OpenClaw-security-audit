@@ -107,7 +107,23 @@ def main():
     all_issues += audit_container()
     
     if use_json:
-        print(json.dumps({"issues": all_issues, "issues_count": len(all_issues), "critical": sum(1 for i in all_issues if i['severity']=='CRITICAL'), "high": sum(1 for i in all_issues if i['severity']=='HIGH'), "warning": sum(1 for i in all_issues if i['severity']=='WARNING')}, indent=2))
+        master_prompt = ""
+        if all_issues:
+            master_prompt = "Fix all security issues in the OpenClaw installation on the VPS in docker container `openclaw-3g02-openclaw-1`. "
+            master_prompt += "Follow the OpenClaw Security SOP: create a backup first, use `openclaw.json` at `/data/.openclaw/openclaw.json`, and ensure model IDs are strings (not arrays). "
+            master_prompt += "After fixing, run `openclaw doctor` and `openclaw security audit --deep` inside the container to verify.\n\n"
+            master_prompt += "The issues to fix:\n"
+            for i, issue in enumerate(all_issues, 1):
+                master_prompt += f"{i}. {issue['description']}. Fix action: {issue['recommendation']}\n"
+        
+        print(json.dumps({
+            "issues": all_issues, 
+            "issues_count": len(all_issues), 
+            "critical": sum(1 for i in all_issues if i['severity']=='CRITICAL'), 
+            "high": sum(1 for i in all_issues if i['severity']=='HIGH'), 
+            "warning": sum(1 for i in all_issues if i['severity']=='WARNING'),
+            "master_prompt": master_prompt
+        }, indent=2))
     else:
         print(f"{CYAN}--- Audit Result ---{RESET}")
         if not all_issues:

@@ -184,6 +184,16 @@ def stream():
                 yield f'data: {json.dumps({"type": "result", "id": cid, "status": "fail"})}\n\n'
         
         score = int((passed / len(checks)) * 100)
-        yield f'data: {json.dumps({"type": "complete", "score": score, "issues": issues})}\n\n'
+        
+        master_prompt = ""
+        if issues:
+            master_prompt = "Fix all security issues in the OpenClaw installation on the VPS in docker container `openclaw-3g02-openclaw-1`. "
+            master_prompt += "Follow the OpenClaw Security SOP: create a backup first, use `openclaw.json` at `/data/.openclaw/openclaw.json`, and ensure model IDs are strings (not arrays). "
+            master_prompt += "After fixing, run `openclaw doctor` and `openclaw security audit --deep` inside the container to verify.\n\n"
+            master_prompt += "The issues to fix:\n"
+            for i, issue in enumerate(issues, 1):
+                master_prompt += f"{i}. {issue['issue']}. Fix action: {issue['prompt']}\n"
+        
+        yield f'data: {json.dumps({"type": "complete", "score": score, "issues": issues, "master_prompt": master_prompt})}\n\n'
     return Response(generate(), mimetype='text/event-stream')
 if __name__ == '__main__': app.run(host='127.0.0.1', port=8021)

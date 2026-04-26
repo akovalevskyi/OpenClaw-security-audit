@@ -229,6 +229,28 @@
         .copy-btn:hover {
             background-color: #444;
         }
+        .master-prompt-container {
+            margin-top: 30px;
+            border: 1px solid var(--accent-color);
+            background-color: rgba(187, 134, 252, 0.05);
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        .master-prompt-title {
+            color: var(--accent-color);
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .master-prompt-title svg {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            transform: none; /* Reset rotation from global svg style */
+            fill: var(--accent-color);
+        }
     </style>
 </head>
 <body>
@@ -255,6 +277,15 @@
         <div class="issues-container" id="issues-container">
             <h2 style="margin-top: 0; color: var(--error-color);">Issues Found</h2>
             <div id="issues-list"></div>
+            
+            <div class="master-prompt-container" id="master-prompt-container">
+                <div class="master-prompt-title">
+                    <svg viewBox="0 0 24 24"><path d="M14,10H19.5L14,4.5V10M5,2H15L21,8V20A2,2 0 0,1 19,22H5A2,2 0 0,1 3,20V4C3,2.89 3.89,2 5,2M5,4V20H19V12H14V7H5V4Z" /></svg>
+                    Unified Fix Prompt (One-Shot)
+                </div>
+                <div class="prompt-box" id="master-prompt-text" style="white-space: pre-wrap; max-height: 300px; overflow-y: auto;"></div>
+                <button class="copy-btn" id="copy-master-btn" style="width: 100%; margin-top: 10px; background-color: var(--accent-color); color: #000; border: none;">Copy Master Fix Prompt</button>
+            </div>
         </div>
     </div>
 
@@ -427,6 +458,16 @@
                             `;
                             issuesList.appendChild(card);
                         });
+
+                        if (data.master_prompt) {
+                            const masterContainer = document.getElementById('master-prompt-container');
+                            const masterText = document.getElementById('master-prompt-text');
+                            const copyMasterBtn = document.getElementById('copy-master-btn');
+                            
+                            masterContainer.style.display = 'block';
+                            masterText.innerText = data.master_prompt;
+                            copyMasterBtn.onclick = () => copyToClipboard(data.master_prompt, copyMasterBtn);
+                        }
                     }
 
                     btn.disabled = false;

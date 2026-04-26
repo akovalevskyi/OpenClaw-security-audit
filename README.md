@@ -4,11 +4,13 @@ A comprehensive security auditing and hardening framework for OpenClaw infrastru
 
 ## New in v2
 - **Cloud-Audited Architecture:** Agents now use `web_fetch` to retrieve reports via a secure JSON API, bypassing container sandbox restrictions.
+- **One-Shot Remediation:** Unified Fix Prompt for instant AI-driven security hardening.
 - **Enhanced 2026.x Schema Support:** Full awareness of `session.dmScope`, `contextVisibility`, and `compaction` settings.
 - **External Sandboxing:** Detection and support for `bubblewrap` (bwrap) isolation without the need for `docker.sock`.
 - **Daily Audit Notifications:** Automated daily checks with Telegram reporting.
 
 ## Features
+- **One-Shot Fixes:** Dashboard and JSON API provide a concatenated prompt containing all detected vulnerabilities and environment context for instant fixing.
 - **Host Hardening:** Port verification (2244), SSH restriction (AllowUsers root), and legacy user locking.
 - **Docker Isolation:** Removal of `docker.sock` and integration with `bubblewrap`.
 - **Network Security:** DOCKER-USER chain isolation and Trusted Proxy configuration.
