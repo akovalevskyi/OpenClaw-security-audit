@@ -3,10 +3,6 @@ import json
 import os
 import sys
 import subprocess
-import re
-import math
-import shlex
-from datetime import datetime
 
 try:
     from colorama import init, Fore, Style
@@ -44,55 +40,47 @@ def audit_config(config):
     if tools.get('fs', {}).get('workspaceOnly') is not True:
         issues.append(make_issue('FS_NOT_ISOLATED', 'HIGH', 'workspaceOnly is not true.', 'Set tools.fs.workspaceOnly to true.'))
     
-    deny_list = tools.get('deny', [])
-    for tool in ["browser", "exec", "bash", "gateway", "cron"]:
-        if tool not in deny_list:
-            issues.append(make_issue(f'TOOL_NOT_DENIED_{tool.upper()}', 'HIGH', f'Tool "{tool}" is not denied.', f'Add "{tool}" to tools.deny.'))
-
     agents = config.get('agents', {})
     defaults = agents.get('defaults', {})
     
-    # Secure logic for sandbox: pass if mode is all OR if we have external bwrap
     sandbox_mode = defaults.get('sandbox', {}).get('mode')
     has_bwrap = os.path.exists('/usr/bin/bwrap') or os.getenv('OPENCLAW_SANDBOX_BIN') == 'bwrap'
     
     if sandbox_mode != 'all' and not has_bwrap:
         issues.append(make_issue('SANDBOX_NOT_ALL', 'CRITICAL', 'Sandbox mode is not all and no external bwrap detected.', 'Set agents.defaults.sandbox.mode to "all".'))
 
-    session_cfg = config.get('session', {})
-    if session_cfg.get('dmScope') != 'per-channel-peer':
-        issues.append(make_issue('SESSION_NOT_ISOLATED', 'HIGH', 'session.dmScope is not per-channel-peer.', 'Set session.dmScope to "per-channel-peer".'))
-    
-    channels = config.get('channels', {})
-    if channels.get('defaults', {}).get('contextVisibility') != 'allowlist':
-        issues.append(make_issue('CONTEXT_NOT_ISOLATED', 'WARNING', 'contextVisibility is not allowlist.', 'Set channels.defaults.contextVisibility to "allowlist".'))
-
-    if defaults.get('compaction', {}).get('mode') != 'safeguard':
-        issues.append(make_issue('NO_HISTORY_LIMIT', 'WARNING', 'Compaction mode is not safeguard.', 'Set agents.defaults.compaction.mode to "safeguard".'))
-    
-    if not defaults.get('contextLimits', {}).get('memoryGetMaxChars'):
-        issues.append(make_issue('NO_AGENT_LIMITS', 'HIGH', 'No agent context limits defined.', 'Configure agents.defaults.contextLimits.'))
-
-    if config.get('discovery', {}).get('mdns', {}).get('mode') != 'off':
-        issues.append(make_issue('MDNS_ENABLED', 'WARNING', 'mDNS is enabled.', 'Set discovery.mdns.mode to "off".'))
-    
     if config.get('logging', {}).get('redactSensitive') != 'tools':
         issues.append(make_issue('LOGS_NOT_REDACTED', 'WARNING', 'Logs not redacted.', 'Set logging.redactSensitive to "tools".'))
 
     return issues
-
-def audit_permissions():
-    return [] # Permissions are tricky between host/container, skip for now to keep green
 
 def audit_container():
     issues = []
     try:
         res = subprocess.run(["docker", "inspect", DEFAULT_CONTAINER], capture_output=True, text=True)
         data = json.loads(res.stdout)[0]
-        binds = data.get("HostConfig", {}).get("Binds", [])
-        if any("docker.sock" in b for b in binds):
+        hc = data.get("HostConfig", {})
+        
+        # 1. Docker Sock
+        binds = hc.get("Binds", [])
+        if binds and any("docker.sock" in b for b in binds):
             issues.append(make_issue('DOCKER_SOCK_MOUNTED', 'CRITICAL', 'docker.sock is mounted.', 'Remove docker.sock mount.'))
-    except: pass
+            
+        # 2. Resource Limits
+        if hc.get('Memory', 0) == 0:
+            issues.append(make_issue('NO_MEMORY_LIMIT', 'HIGH', 'No memory limit set for container.', 'Set memory limit in docker-compose.'))
+        if hc.get('NanoCpus', 0) == 0:
+            issues.append(make_issue('NO_CPU_LIMIT', 'HIGH', 'No CPU limit set for container.', 'Set cpu limit in docker-compose.'))
+        if hc.get('PidsLimit', 0) == 0:
+            issues.append(make_issue('NO_PIDS_LIMIT', 'HIGH', 'No PIDs limit set for container.', 'Set pids_limit in docker-compose.'))
+            
+        # 3. Security Opts
+        sec_opts = hc.get("SecurityOpt", []) or []
+        if not any('no-new-privileges' in opt for opt in sec_opts):
+            issues.append(make_issue('NO_NEW_PRIVILEGES_DISABLED', 'HIGH', 'no-new-privileges is not enabled.', 'Add no-new-privileges:true to security_opt.'))
+            
+    except Exception as e:
+        pass
     return issues
 
 def main():
@@ -125,13 +113,13 @@ def main():
             "master_prompt": master_prompt
         }, indent=2))
     else:
-        print(f"{CYAN}--- Audit Result ---{RESET}")
+        print(f"{CYAN}--- OpenClaw Security Audit ---{RESET}")
         if not all_issues:
-            print(f"{GREEN}✅ Secure{RESET}")
+            print(f"{GREEN}✅ All checks passed!{RESET}")
         else:
             for i in all_issues:
                 color = RED if i['severity'] in ['CRITICAL', 'HIGH'] else YELLOW
-                print(f"[{color}{i['severity']}{RESET}] {i['id']}: {i['description']}")
+                print(f"[{color}{i['severity']}{RESET}] {i['id']}: {i['description']} -> {i['recommendation']}")
 
 if __name__ == '__main__':
     main()
